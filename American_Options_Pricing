@@ -18,13 +18,13 @@ class American_Options(object):
 
     def __init__(self, option_type, S0, strike, T, K, r, sigma, nbr_simulations):
             self.option_type = option_type
-            self.S0 = float(S0)
-            self.strike = float(strike)
-            self.T = float(T)
-            self.K = int(K) 
-            self.r = float(r)
-            self.sigma = float(sigma)
-            self.nbr_simulations = int(nbr_simulations)
+            self.S0 = S0
+            self.strike = strike
+            self.T = T
+            self.K = K
+            self.r = r
+            self.sigma = sigma
+            self.nbr_simulations = nbr_simulations
 
             if option_type != 'call' and option_type != 'put':
               raise ValueError("Error: option type not valid. Enter 'call' or 'put'")
