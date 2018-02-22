@@ -38,7 +38,7 @@ def payoff(S,dv,a1,b1,a2,b2):
 def penalty(S,v):
     
     #specify the penalty function otherwise return 0
-    return 0
+    return 0.2*np.ones_like(S)
     
 
 
@@ -53,7 +53,7 @@ class gas_storage(object):
     
     """
 
-    def __init__(self,  S0, T, K,  r, sigma, nbr_simulations,vMax,vMin , max_inj_rate, max_wit_rate , min_inj_rate , min_wit_rate ,a1,b1,a2,b2 ):
+    def __init__(self,  S0, T, K,  r, sigma, nbr_simulations,vMax,vMin , max_rate, min_rate , a1,b1,a2,b2 ):
      
             self.S0 = S0                                        # Parameters for the spot price
             self.T = T
@@ -63,10 +63,8 @@ class gas_storage(object):
         
             self.vMax = vMax                                    # Parameters for facility
             self.vMin = vMin                               
-            self.max_inj_rate = max_inj_rate             
-            self.max_wit_rate = max_wit_rate
-            self.min_inj_rate = min_inj_rate             
-            self.min_wit_rate = min_wit_rate
+            self.max_rate = max_rate             
+            self.min_rate = min_rate             
             
             self.a1 = a1                                        # Parameters for the payoff function
             self.b1 = b1
@@ -120,16 +118,14 @@ class gas_storage(object):
             continuation_value = np.polyval(regression, self.simulated_price_matrix()[t, :])
             
             for b in range(self.nbr_simulations):
-                 f = lambda x: -1* payoff(self.simulated_price_matrix()[t, b], x ,self.a1, self.b1, self.a2, self.b2 ) + continuation_value[b]   
+                 f = lambda x: -1*( payoff(self.simulated_price_matrix()[t, b], x ,self.a1, self.b1, self.a2, self.b2 ) + continuation_value[b]  )
 
                  cons = ({'type': 'ineq', 'fun': lambda x:  volume_level[t,b] - x - self.vMin },
                          {'type': 'ineq', 'fun': lambda x:  self.vMax - volume_level[t,b] + x },
-                         {'type': 'ineq', 'fun': lambda x:  self.max_inj_rate - x             },
-                         {'type': 'ineq', 'fun': lambda x:  self.max_wit_rate - x             },
-                         {'type': 'ineq', 'fun': lambda x:  x - self.min_inj_rate             },
-                         {'type': 'ineq', 'fun': lambda x:  x - self.min_wit_rate             })   
+                         {'type': 'ineq', 'fun': lambda x:  self.max_rate - x                 },
+                         {'type': 'ineq', 'fun': lambda x:  x - self.min_rate                 })   
     
-                 res = minimize(f, 0, constraints=cons) 
+                 res = minimize(f, 0, constraints=cons)     #dv(0) = 0 by definition
                  decision_rule[t,b] = res.x
 
                  
@@ -140,7 +136,11 @@ class gas_storage(object):
             volume_level_avg[t] = np.sum(volume_level[t,:])/self.nbr_simulations
             acc_cashflows_avg[t] = np.sum(acc_cashflows[t,:])/self.nbr_simulations
             
-            print (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t] ,  volume_level_avg[t], acc_cashflows_avg[t] , t)
+            print('Spot price: %5.1f , decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f,  time: %5.2f,'% (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t], volume_level_avg[t], t) )
+ 
+    
+            
+            #print (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t] ,  volume_level_avg[t], acc_cashflows_avg[t] , t)
 
         return acc_cashflows[1,:] * self.discount             # at time 0
 
@@ -151,19 +151,17 @@ class gas_storage(object):
             
             
     
-# gas_storage(S0, T, K, r, sigma, nbr_simulations, vMax, vMin , max_inj_rate, max_wit_rate , min_inj_rate , min_wit_rate  ,a1, b1, a2, b2 )  
+# gas_storage(S0, T, K, r, sigma, nbr_simulations, vMax, vMin , max_rate , min_rate  ,a1, b1, a2, b2 )  
          
-facility1 =  gas_storage(20, 5, 10 , 0.06, 0.2, 1000, 600000, 0 , 20000, 20000, 0 ,0  ,1, 1, 1, 1 )  
+facility1 =  gas_storage(20, 5, 10 , 0.06, 0.2, 1000, 600000, 0 , 20000, -20000  ,1, 1, 1, 1 )  
     
     
 print ('Price: ', facility1.price())   
     
 
     
-#f = lambda x: -1* payoff(self.simulated_price_matrix()[t, :], x ,self.a1, self.b1, self.a2, self.b2 ) + continuation_value   
     
-# print ("decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f,  time: %5.2f," % (decision_rule_avg[t], acc_cashflows_avg[t] ,  volume_level_avg[t], acc_cashflows_avg[t] , t))
- 
+
     
     
     
