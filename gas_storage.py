@@ -136,7 +136,7 @@ class gas_storage(object):
             volume_level_avg[t] = np.sum(volume_level[t,:])/self.nbr_simulations
             acc_cashflows_avg[t] = np.sum(acc_cashflows[t,:])/self.nbr_simulations
             
-            print('Spot price: %5.1f , decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f,  time: %5.2f,'% (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t], volume_level_avg[t], t) )
+            print('Time: %5.2f, Spot price: %5.1f , decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f'% (t, self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t], volume_level_avg[t]) )
  
     
         return acc_cashflows[1,:] * self.discount             # at time 0
