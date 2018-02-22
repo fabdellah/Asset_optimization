@@ -139,9 +139,6 @@ class gas_storage(object):
             print('Spot price: %5.1f , decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f,  time: %5.2f,'% (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t], volume_level_avg[t], t) )
  
     
-            
-            #print (self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t] ,  volume_level_avg[t], acc_cashflows_avg[t] , t)
-
         return acc_cashflows[1,:] * self.discount             # at time 0
 
 
