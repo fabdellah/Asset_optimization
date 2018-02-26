@@ -25,20 +25,20 @@ def withdrawal_profit(S,a2,b2):
 
 
 def payoff(S,dv,a1,b1,a2,b2):
-    # if dv > 0:
-    h= -injection_cost(S,a1,b1)*dv
-    #elif dv == 0:
-    #    h = 0
-    #else:
-    #    h = -withdrawal_profit(S,a2,b2)*dv
+     #if dv > 0:
+      h= -injection_cost(S,a1,b1)*dv
+     #elif dv == 0:
+      #h = 0
+     #else:
+      #h = -withdrawal_profit(S,a2,b2)*dv
         
-    return h
+      return h
 
 
 def penalty(S,v):
     
     #specify the penalty function otherwise return 0
-    return 0.2*np.ones_like(S)
+    return np.zeros_like(S)
     
 
 
@@ -85,15 +85,16 @@ class gas_storage(object):
             rows: time
             columns: price-path simulation """
         np.random.seed(seed)
-        simulated_price_matrix = np.zeros((self.K + 1, self.nbr_simulations), dtype=np.float64)
+        simulated_price_matrix = np.zeros((self.K + 2, self.nbr_simulations), dtype=np.float64)
         simulated_price_matrix[0,:] = self.S0
-        for t in range(1, self.K + 1):
+        for t in range(1, self.K + 2):
             brownian = np.random.standard_normal( int(self.nbr_simulations / 2))
             brownian = np.concatenate((brownian, -brownian))
             
-            simulated_price_matrix[t, :] = (simulated_price_matrix[t - 1, :]      #needs to be specified according to the corresponding 2-factor model
+            simulated_price_matrix[t, :] = (simulated_price_matrix[t - 1, :]      
                                   * np.exp((self.r - self.sigma ** 2 / 2.) * self.delta_t
                                   + self.sigma * brownian * np.sqrt(self.delta_t)))
+            #needs to be specified according to the corresponding 2-factor model
         return simulated_price_matrix
             
        
@@ -118,7 +119,8 @@ class gas_storage(object):
             continuation_value = np.polyval(regression, self.simulated_price_matrix()[t, :])
             
             for b in range(self.nbr_simulations):
-                 f = lambda x: -1*( payoff(self.simulated_price_matrix()[t, b], x ,self.a1, self.b1, self.a2, self.b2 ) + continuation_value[b]  )
+                 f = lambda x: -1*( payoff(self.simulated_price_matrix()[t, b],
+                                           x ,self.a1, self.b1, self.a2, self.b2 ) + continuation_value[b]  )
 
                  cons = ({'type': 'ineq', 'fun': lambda x:  volume_level[t,b] - x - self.vMin },
                          {'type': 'ineq', 'fun': lambda x:  self.vMax - volume_level[t,b] + x },
@@ -129,15 +131,17 @@ class gas_storage(object):
                  decision_rule[t,b] = res.x
 
                  
-            volume_level[t+1,:] = volume_level[t,:] + decision_rule[t,:]
-            acc_cashflows[t,:] = payoff(self.simulated_price_matrix()[t, :], decision_rule[t,:] ,self.a1, self.b1, self.a2, self.b2) + acc_cashflows[t+1,:]*self.discount
+            volume_level[t,:] = volume_level[t+1,:] - decision_rule[t,:]
+            acc_cashflows[t,:] = payoff(self.simulated_price_matrix()[t, :],
+                         decision_rule[t,:] ,self.a1, self.b1, self.a2, self.b2) + acc_cashflows[t+1,:]*self.discount
             
             decision_rule_avg[t] = np.sum(decision_rule[t,:])/self.nbr_simulations
             volume_level_avg[t] = np.sum(volume_level[t,:])/self.nbr_simulations
             acc_cashflows_avg[t] = np.sum(acc_cashflows[t,:])/self.nbr_simulations
             
-            print('Time: %5.2f, Spot price: %5.1f , decision rule (inject/withdraw): %5.1f , acc_cashflows: %5.2f,  Volume level %5.3f'% (t, self.simulated_price_matrix()[t, 1], decision_rule_avg[t], acc_cashflows_avg[t], volume_level_avg[t]) )
- 
+            print ('Time: %5.2f, Spot price: %5.1f , Volume level: %5.3f, Decision rule (inject/withdraw): %5.1f , Acc_cashflows: %5.2f '
+                   % (t, self.simulated_price_matrix()[t, 1] , volume_level_avg[t], decision_rule_avg[t], acc_cashflows_avg[t] ))
+
     
         return acc_cashflows[1,:] * self.discount             # at time 0
 
@@ -153,7 +157,7 @@ class gas_storage(object):
 facility1 =  gas_storage(20, 5, 10 , 0.06, 0.2, 1000, 600000, 0 , 20000, -20000  ,1, 1, 1, 1 )  
     
     
-print ('Price: ', facility1.price())   
+print ('Price: %5.2f' %(facility1.price() ))   
     
 
     
