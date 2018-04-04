@@ -65,7 +65,7 @@ def MA_vect(df,i, lag:int, period, ma_vect):
     nbr_months = 3 # = reset_period 
     df = df.reset_index()  
     df.drop('index', axis=1, inplace=True)
-    start_date = datetime.strptime('2016-01-04 00:00:00',"%Y-%m-%d %H:%M:%S")+ relativedelta(months=i) 
+    start_date = datetime.strptime('2016-01-31 00:00:00',"%Y-%m-%d %H:%M:%S")+ relativedelta(months=i) 
     k=0
     ma_vect =  np.zeros(nbr_months)   
     for single_date in pd.date_range(start_date, periods=nbr_months, freq='BM'):
@@ -77,11 +77,11 @@ def MA_vect(df,i, lag:int, period, ma_vect):
 def MA_vectorized(df, vect_lag, vect_period, ma_vectorized):
     reset_period = 3
     reset_range = range(0,len(vect_lag),reset_period)
-    j = 0
+    #j = 0
     for i in reset_range:   
         for k in range(3):
-            ma_vectorized[i+k] = MA_vect(df, i, vect_lag[j], vect_period[j], np.empty(3))[k]
-        j = j+1
+            ma_vectorized[i+k] = MA_vect(df, i, vect_lag[i], vect_period[i], np.empty(3))[k]
+        #j = j+1
     return ma_vectorized    
         
         
@@ -102,7 +102,7 @@ def standardize(x):
     x = x - mean_x
     std_x = np.std(x)
     x = x / std_x
-    return x, mean_x, std_x
+    return x
 
 
 def calculate_mse(e):
@@ -180,8 +180,8 @@ if __name__ == '__main__':
     yy.drop('index', axis=1, inplace=True)
     yy.drop('level_0', axis=1, inplace=True)
     y = yy['USD.20']
-    x, mean_x, std_x = standardize(xx['oil'])
-    xx['oil'] = x
+    #x, mean_x, std_x = standardize(xx['oil'])
+    #xx['oil'] = x
 
     max_period = 24
     max_lag = 12
@@ -195,10 +195,10 @@ if __name__ == '__main__':
     
     max_iters = 100
     gamma = 0.7
-    nbr_iterations = 100
-    init_coef = -5.45
-    init_lag = 7
-    init_period = 19
+    nbr_iterations = 10
+    init_coef = 0.006
+    init_lag = 11
+    init_period = 24
     
     coef = np.array([init_coef])
     vect_lag = init_lag*np.ones(len(yy))
@@ -243,13 +243,14 @@ if __name__ == '__main__':
             j = j+1
             
             
+        print('vect lag: ', vect_lag)
         
         X_array = MA_vectorized(xx, vect_lag, vect_period, np.empty(len(yy)))      
         X = pd.DataFrame(X_array, columns=['oil']) #sert a rien
                   
         w_initial = coef
 
-        gradient_loss, gradient_w, perc_err = gradient_descent(y, X_array, w_initial, max_iters, gamma)
+        gradient_loss, gradient_w, perc_err = gradient_descent(standardize(y), standardize(X_array), w_initial, max_iters, gamma)
         
         print('loss', gradient_loss)
         print('perc err', perc_err)
@@ -260,7 +261,7 @@ if __name__ == '__main__':
         coef = gradient_w
         
        
-        X_train, X_test, y_train, y_test = train_test_split(X_array.reshape(12,1), y, random_state=1)
+        X_train, X_test, y_train, y_test = train_test_split(standardize(X_array.reshape(12,1)), standardize(y), random_state=1)
         
         res_ridge = ridge_regression(X_train,y_train, X_test, y_test)
         y_pred_GD = coef*X_test
